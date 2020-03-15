@@ -1,7 +1,23 @@
 import cv2
-import numpy as np
 import time
+
+from keras.models import load_model
+from keras.preprocessing import image
+import numpy as np
 # import copy
+
+labels_dict = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7, 'I': 8, 'J': 9, 'K': 10, 'L': 11, 'M': 12,
+               'N': 13, 'O': 14, 'P': 15, 'Q': 16, 'R': 17, 'S': 18, 'T': 19, 'U': 20, 'V': 21, 'W': 22, 'X': 23, 'Y': 24,
+               'Z': 25, 'space': 26, 'del': 27, 'nothing': 28}
+
+_labels = dict([(value, key) for key, value in labels_dict.items()])
+
+img_width, img_height = 64, 64
+
+model = load_model('model.h5')
+model.compile(loss='binary_crossentropy',
+              optimizer='rmsprop',
+              metrics=['accuracy'])
 
 #create face cascade
 face_cascade = cv2.CascadeClassifier('haarcascade_face.xml')
@@ -90,6 +106,7 @@ while(1):
         #Find contours of the filtered frame
         contours, hierarchy = cv2.findContours(
             thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
         # print(contours)
         max_area = 100
         ci = 0
@@ -139,13 +156,30 @@ while(1):
         cv2.drawContours(frame, [hull], -1, (255, 255, 255), 2)
         
         roi_hand = frame[y:y+h, x:x+w]
-        padded=getPaddedImage(roi_hand)
-        cv2.imshow("square",padded)
+
+        """prediction part"""
+        #img = image.load_img('./test_ext/sample_1_l.jpg',
+        #                     target_size=(img_width, img_height))
+        img = cv2.resize(roi_hand, (img_width, img_height))
+        x = image.img_to_array(img)
+        x = np.expand_dims(x, axis=0)
+
+        images = np.vstack([x])
+        classes = model.predict_classes(images, batch_size=10)
+        print("predictions : ", classes)
+        print("predicted label : ", _labels.get(classes[0]))
+        cv2.putText(frame, _labels.get(
+            classes[0]), (300, 300), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+
+        # padded=getPaddedImage(roi_hand)
+        # cv2.imshow("square",padded)
         # roi_hand_gray=cv2.cvtColor(roi_hand,cv2.COLOR_BGR2GRAY)
         # roi_hand_thresh=cv2.threshold(roi_gray,150,255,cv2.THRESH_BINARY)
         cv2.imshow('run time frame', frame)
         cv2.imshow('run time hand', roi_hand)
-    except:
+    except Exception as e:
+        print(e.with_traceback())
+        break
         continue
     k = cv2.waitKey(5) & 0xFF
     if k == 27:

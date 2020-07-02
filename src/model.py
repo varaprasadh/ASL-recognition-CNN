@@ -11,9 +11,6 @@ from keras.models import Sequential
 from keras import regularizers
 from sklearn.model_selection import train_test_split
 import cv2
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 
 
 train_dir = './dataset/asl-alphabet_exclude/asl_alphabet_train/asl_alphabet_train'
@@ -40,26 +37,6 @@ def load_unique():
 images_for_plot, labels_for_plot = load_unique()
 print("unique_labels = ", labels_for_plot)
 
-fig = plt.figure(figsize=(15, 15))
-
-
-def plot_images(fig, image, label, row, col, index):
-    fig.add_subplot(row, col, index)
-    plt.axis('off')
-    plt.imshow(image)
-    plt.title(label)
-    return
-
-
-image_index = 0
-row = 5
-col = 6
-for i in range(1, (row*col)):
-    plot_images(fig, images_for_plot[image_index],
-                labels_for_plot[image_index], row, col, i)
-    image_index = image_index + 1
-plt.show()
-
 # **LOADING DATA**
 
 
@@ -69,7 +46,10 @@ plt.show()
 # 1. Defining a dictionary which contains labels and its mapping to a number which acts as class label.;
 labels_dict = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7, 'I': 8, 'J': 9, 'K': 10, 'L': 11, 'M': 12,
                'N': 13, 'O': 14, 'P': 15, 'Q': 16, 'R': 17, 'S': 18, 'T': 19, 'U': 20, 'V': 21, 'W': 22, 'X': 23, 'Y': 24,
-               'Z': 25, 'space': 26, 'del': 27, 'nothing': 28}
+               'Z': 25, 'space': 26, 'del': 27, 'nothing': 2}
+
+
+
 
 # 2. loading image data and labels and then mapping those labels to the dictionary defined before.
 def load_data():
@@ -97,7 +77,6 @@ def load_data():
     X_train, X_test, Y_train, Y_test = train_test_split(
         images, labels, test_size=0.05)
 
-    print()
     print('Loaded', len(X_train), 'images for training,',
           'Train data shape =', X_train.shape)
     print('Loaded', len(X_test), 'images for testing',
@@ -138,15 +117,14 @@ def create_model():
 
     model.add(Flatten())
     model.add(Dropout(0.5))
-    model.add(Dense(512, activation='relu',
-                    kernel_regularizer=regularizers.l2(0.001)))
+    model.add(Dense(512, activation='relu'))
     model.add(Dense(29, activation='softmax'))
 
     model.compile(optimizer='adam',
                   loss=keras.losses.categorical_crossentropy, metrics=["accuracy"])
 
     print("MODEL CREATED")
-    model.summary()-
+    model.summary()
 
     return model
 
@@ -163,31 +141,10 @@ def fit_model():
 model = create_model()
 curr_model_hist = fit_model()
 
-# **Plotting the model performance metrics to check model performance.**
-
-
-plt.plot(curr_model_hist.history['acc'])
-plt.plot(curr_model_hist.history['val_acc'])
-plt.legend(['train', 'test'], loc='lower right')
-plt.title('accuracy plot - train vs test')
-plt.xlabel('epoch')
-plt.ylabel('accuracy')
-plt.show()
-
-plt.plot(curr_model_hist.history['loss'])
-plt.plot(curr_model_hist.history['val_loss'])
-plt.legend(['training loss', 'validation loss'], loc='upper right')
-plt.title('loss plot - training vs vaidation')
-plt.xlabel('epoch')
-plt.ylabel('loss')
-plt.show()
-
 # **EVALUATING THE TRAINED MODEL ON THE TEST DATA SPLIT **
 
-
 evaluate_metrics = model.evaluate(X_test, Y_test)
-print("\nEvaluation Accuracy = ", "{:.2f}%".format(
-    evaluate_metrics[1]*100), "\nEvaluation loss = ", "{:.6f}".format(evaluate_metrics[0]))
+
 
 # Loading the test data Provided.
 # * The test data contains images with the image name as the class, to which the image belongs to.
@@ -226,53 +183,5 @@ def get_labels_for_plot(predictions):
     return predictions_labels
 
 
-predictions_labels_plot = get_labels_for_plot(predictions)
-
-# PLOTTING THE TEST DATA ALONG WITH THE PREDICTION MADE BY THE MODEL
-
-
-predfigure = plt.figure(figsize=(13, 13))
-
-
-def plot_image_1(fig, image, label, prediction, predictions_label, row, col, index):
-    fig.add_subplot(row, col, index)
-    plt.axis('off')
-    plt.imshow(image)
-    title = "prediction : [" + str(predictions_label) + "] " + "\n" + label
-    plt.title(title)
-    return
-
-
-image_index = 0
-row = 5
-col = 6
-for i in range(1, (row*col-1)):
-    plot_image_1(predfigure, test_images[image_index], test_img_names[image_index],
-                 predictions[image_index], predictions_labels_plot[image_index], row, col, i)
-    image_index = image_index + 1
-plt.show()
-
-# As we can see the predictions are correct for almost all the images. Thus the model performs well on the test set.
-
-# testing model with pretrainded model
-
-#testing model
-img_width, img_height = 64, 64
-model = load_model('model.h5')
-model.compile(loss='binary_crossentropy',
-              optimizer='rmsprop',
-              metrics=['accuracy'])
-
-
-
-img = image.load_img('A_resized.jpg', target_size=(img_width, img_height))
-x = image.img_to_array(img)
-x = np.expand_dims(x, axis=0)
-
-images = np.vstack([x])
-classes = model.predict_classes(images, batch_size=10)
-
-
-print(classes)
 
 

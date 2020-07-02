@@ -2,23 +2,22 @@ import cv2
 import numpy as np
 from keras.models import load_model
 from keras.preprocessing import image
-import time
 
 
 labels_dict = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7, 'I': 8, 'J': 9, 'K': 10, 'L': 11, 'M': 12,
                'N': 13, 'O': 14, 'P': 15, 'Q': 16, 'R': 17, 'S': 18, 'T': 19, 'U': 20, 'V': 21, 'W': 22, 'X': 23, 'Y': 24,
                'Z': 25, 'space': 26, 'del': 27, 'nothing': 28}
 
+
 _labels = dict([(value, key) for key, value in labels_dict.items()])
 
 img_width, img_height = 64, 64
 
 model = load_model('model.h5')
+
 model.compile(loss='binary_crossentropy',
               optimizer='rmsprop',
               metrics=['accuracy'])
-
-
 
 
 hand_hist = None
@@ -215,10 +214,11 @@ def extractSkin(image):
     # Return the Skin image
     return cv2.cvtColor(skin, cv2.COLOR_HSV2BGR)
 
-def main():
+def main():          
     global hand_hist
     is_hand_hist_created = False
     capture = cv2.VideoCapture(0)
+
 
     while capture.isOpened():
         pressed_key = cv2.waitKey(1)
@@ -231,8 +231,8 @@ def main():
         if is_hand_hist_created:
             extracted_hand_image = getHand_Rect(frame, hand_hist)
             if(extracted_hand_image is not None):
-                # foreground_hand = extractSkin(extracted_hand_image)
-                # cv2.imshow('masked', foreground_hand)
+                foreground_hand = extractSkin(extracted_hand_image)
+                cv2.imshow('masked', foreground_hand)
                 x = image.img_to_array(extracted_hand_image)
                 x = np.expand_dims(x, axis=0)
 
